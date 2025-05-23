@@ -5,6 +5,7 @@ import Error from './pages/Error';
 import Muebles from './pages/Muebles';
 import Proveedores from './pages/Proveedores';
 import Vendedores from './pages/Vendedores';
+import RegistroUsuarios from './pages/RegistroUsuarios';
 import Inicio from './pages/Inicio';
 import RutasPrivadas from './routes/RutasPrivadas';
 import RutasPublicas from './routes/RutasPublicas';
@@ -19,6 +20,7 @@ function App() {
       <Route path="/muebles" element={<RutasPrivadas><Muebles /></RutasPrivadas>} />
       <Route path="/proveedores" element={<RutasPrivadas><Proveedores /></RutasPrivadas>} />
       <Route path="/vendedores" element={<RutasPrivadas><Vendedores /></RutasPrivadas>} />
+      <Route path="/usuarios" element={<RutasPrivadas><RegistroUsuarios /></RutasPrivadas>} />
       <Route path="*" element={<Error />} />
     </Routes>
   );

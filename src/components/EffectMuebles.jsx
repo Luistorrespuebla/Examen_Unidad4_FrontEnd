@@ -12,6 +12,8 @@ export default function Muebles() {
   const [precio, setPrecio] = useState("");
   const [inventario, setInventario] = useState("");
   const [id, setId] = useState("");
+  const [archivo, setArchivo] = useState(null);
+  const [preview, setPreview] = useState(null);
   const [datos, setDatos] = useState([]);
   const [mostrarDatos, setMostrarDatos] = useState(false);
   const [modoEdicion, setModoEdicion] = useState(false);
@@ -28,6 +30,8 @@ export default function Muebles() {
     setPrecio("");
     setInventario("");
     setId("");
+    setArchivo(null);
+    setPreview(null);
     setModoEdicion(false);
   };
 
@@ -46,8 +50,33 @@ export default function Muebles() {
     }
   };
 
+  const subirImagen = async () => {
+    if (!archivo) return null;
+
+    const formData = new FormData();
+    formData.append("image", archivo);
+
+    try {
+      const res = await fetch("http://localhost:3001/imagen", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await res.json();
+      if (data.estatus === "correcto") {
+        return data.url;
+      } else {
+        Swal.fire("Error", "No se pudo subir la imagen", "error");
+        return null;
+      }
+    } catch (error) {
+      Swal.fire("Error", "Error de red al subir imagen", "error");
+      return null;
+    }
+  };
+
   const insertar = async () => {
-    if (!nombreMueble || !estilo || !precio || !inventario || !id) {
+    if (!nombreMueble || !estilo || !precio || !inventario) {
       Swal.fire("Campos incompletos", "Todos los campos son obligatorios", "warning");
       return;
     }
@@ -58,11 +87,8 @@ export default function Muebles() {
       return;
     }
 
-    const idExistente = datos.find((mueble) => mueble.id === id);
-    if (idExistente) {
-      Swal.fire("ID duplicado", "Ya existe un mueble con ese ID", "error");
-      return;
-    }
+    const urlImagen = await subirImagen();
+    if (!urlImagen) return;
 
     try {
       await axios.post("http://localhost:3001/insercion_Muebles", {
@@ -70,7 +96,7 @@ export default function Muebles() {
         estilo,
         precio,
         inventario,
-        id
+        id: urlImagen
       }, headers);
 
       Swal.fire("Insertado", "Mueble agregado correctamente", "success");
@@ -82,7 +108,7 @@ export default function Muebles() {
   };
 
   const actualizar = async () => {
-    if (!nombreMueble || !estilo || !precio || !inventario || !id) {
+    if (!nombreMueble || !estilo || !precio || !inventario) {
       Swal.fire("Campos incompletos", "Todos los campos son obligatorios", "warning");
       return;
     }
@@ -93,10 +119,11 @@ export default function Muebles() {
       return;
     }
 
-    const idDuplicado = datos.find((m) => m.id === id && m.nombreMueble !== nombreMueble);
-    if (idDuplicado) {
-      Swal.fire("ID duplicado", "Ya existe otro mueble con ese ID", "error");
-      return;
+    let urlImagen = id;
+    if (archivo) {
+      const nuevaUrl = await subirImagen();
+      if (!nuevaUrl) return;
+      urlImagen = nuevaUrl;
     }
 
     try {
@@ -104,7 +131,7 @@ export default function Muebles() {
         estilo,
         precio,
         inventario,
-        id
+        id: urlImagen
       }, headers);
 
       Swal.fire("Actualizado", "Mueble actualizado correctamente", "success");
@@ -143,6 +170,8 @@ export default function Muebles() {
     setPrecio(mueble.precio);
     setInventario(mueble.inventario);
     setId(mueble.id);
+    setPreview(`http://localhost:3001/uploads/${mueble.id}`);
+    setArchivo(null);
     setModoEdicion(true);
   };
 
@@ -152,47 +181,45 @@ export default function Muebles() {
 
       <div className="row mb-3">
         <div className="col">
-          <input
-            className="form-control"
-            placeholder="Nombre del Mueble"
-            value={nombreMueble}
-            onChange={(e) => setNombreMueble(e.target.value)}
-          />
+          <input className="form-control" placeholder="Nombre del Mueble" value={nombreMueble} onChange={(e) => setNombreMueble(e.target.value)} />
         </div>
         <div className="col">
-          <input
-            className="form-control"
-            placeholder="Estilo"
-            value={estilo}
-            onChange={(e) => setEstilo(e.target.value)}
-          />
+          <input className="form-control" placeholder="Estilo" value={estilo} onChange={(e) => setEstilo(e.target.value)} />
         </div>
         <div className="col">
-          <input
-            className="form-control"
-            placeholder="Precio"
-            type="number"
-            value={precio}
-            onChange={(e) => setPrecio(e.target.value)}
-          />
+          <input className="form-control" placeholder="Precio" type="number" value={precio} onChange={(e) => setPrecio(e.target.value)} />
         </div>
         <div className="col">
-          <input
-            className="form-control"
-            placeholder="Inventario"
-            type="number"
-            value={inventario}
-            onChange={(e) => setInventario(e.target.value)}
-          />
+          <input className="form-control" placeholder="Inventario" type="number" value={inventario} onChange={(e) => setInventario(e.target.value)} />
         </div>
         <div className="col">
-          <input
-            className="form-control"
-            placeholder="ID"
-            type="number"
-            value={id}
-            onChange={(e) => setId(e.target.value)}
+          <input className="form-control" type="file" accept="image/*"
+            onChange={(e) => {
+              const file = e.target.files[0];
+              setArchivo(file);
+              if (file) {
+                const reader = new FileReader();
+                reader.onloadend = () => setPreview(reader.result);
+                reader.readAsDataURL(file);
+              } else {
+                setPreview(null);
+              }
+            }}
           />
+          {preview && (
+            <div className="mt-2 text-center">
+              <img src={preview} alt="Vista previa"
+                style={{
+                  width: "100px",
+                  height: "100px",
+                  objectFit: "cover",
+                  border: "1px solid #ccc",
+                  borderRadius: "8px"
+                }}
+                onError={(e) => e.target.style.display = 'none'}
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -213,7 +240,7 @@ export default function Muebles() {
               <th>Estilo</th>
               <th>Precio</th>
               <th>Inventario</th>
-              <th>ID</th>
+              <th>Imagen</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -224,7 +251,25 @@ export default function Muebles() {
                 <td>{mueble.estilo}</td>
                 <td>{mueble.precio}</td>
                 <td>{mueble.inventario}</td>
-                <td>{mueble.id}</td>
+                <td>
+                  <a href={mueble.id} target="_blank" rel="noopener noreferrer">
+                    <img
+                      src={mueble.id}
+                      alt="Imagen del mueble"
+                      style={{
+                        width: "80px",
+                        height: "80px",
+                        objectFit: "cover",
+                        borderRadius: "6px",
+                        cursor: "pointer"
+                      }}
+                      onError={(e) => {
+                        console.error("Error al cargar imagen:", mueble.id);
+                        e.target.src = "";
+                      }}
+                    />
+                  </a>
+                </td>
                 <td>
                   <button className="btn btn-warning btn-sm me-2" onClick={() => cargarParaActualizar(mueble)}>Actualizar</button>
                   <button className="btn btn-danger btn-sm" onClick={() => eliminar(mueble.nombreMueble)}>Eliminar</button>

@@ -4,18 +4,18 @@ import 'bootstrap/dist/js/bootstrap.bundle.js';
 
 import Nav from "../components/Nav";
 import Footer from '../components/Footer';
-import EffectProveedores from '../components/EffectProveedores';
+import EffectUsuarios from '../components/EffectUsuarios';
 import Header from '../components/Header';
 
-const Proveedores = () => {
+const RegistroUsuarios = () => {
   return (
     <>
       <Nav/>
       <Header/>
-      <EffectProveedores/>
+      <EffectUsuarios/>
       <Footer />
     </>
   );
 };
 
-export default Proveedores;
+export default RegistroUsuarios;

@@ -6,22 +6,22 @@ import Form from 'react-bootstrap/Form';
 import { useForm } from 'react-hook-form';  
 import Swal from 'sweetalert2';
 
-const MainLogin = () => {
+const Main_Login = () => {
   const { login } = useContext(Contexto);
   const navegacion = useNavigate();
   
   const validaciones = {
     usuario: {
       required: "El campo usuario es requerido",
-      petter: {
-        value: /[a-zA-Z0-9]+/,
-        message: "La contraseña solo puede contener letras y números"
+      pattern: {
+        value: /^[a-zA-Z0-9]+$/,
+        message: "El usuario solo puede contener letras y números"
       }
     },
     password: {
       required: "El campo password es requerido",
-      petter: {
-        value: /[a-zA-Z0-9]+/,
+      pattern: {
+        value: /^[a-zA-Z0-9]+$/,
         message: "La contraseña solo puede contener letras y números"
       }
     }
@@ -30,20 +30,47 @@ const MainLogin = () => {
   const { register, handleSubmit, formState: { errors } } = useForm();
 
   const onsubmit = (data) => {
+    console.log("📤 Enviando datos de login:", data);
+
     fetch("http://localhost:3001/login", {
       headers: { "Content-Type": "application/json" },
-      method: "post",
+      method: "POST",
       body: JSON.stringify({
         usuario: data.usuario,
         password: data.password
       })
     })
-    .then(respuesta => respuesta.json())
+    .then(res => {
+      console.log("🔄 Respuesta bruta del servidor:", res);
+      return res.json();
+    })
     .then(respuesta => {
-      if (respuesta.token) {
-        login(respuesta);
+      console.log("✅ Respuesta procesada del servidor:", respuesta);
+
+      if (respuesta.token && respuesta.usuario) {
+        const { estado } = respuesta.usuario;
+
+        if (estado === 2 || estado === "2") {
+          console.warn("🔒 Usuario con estado 2 (bloqueado)");
+          Swal.fire({
+            icon: 'warning',
+            title: 'Acceso restringido',
+            text: 'Tu cuenta está bloqueada. Por favor, comunícate con el administrador.'
+          });
+          return;
+        }
+
+        const datosUsuario = {
+          token: respuesta.token,
+          ...respuesta.usuario  
+        };
+
+        console.log("🧾 Datos del usuario logueado:", datosUsuario);
+
+        login(datosUsuario);
         navegacion("/", { replace: true });
       } else {
+        console.warn("❌ Credenciales incorrectas o datos faltantes:", respuesta);
         Swal.fire({
           icon: 'error',
           title: 'Credenciales no válidas',
@@ -52,7 +79,12 @@ const MainLogin = () => {
       }
     })
     .catch(error => {
-      console.log("Se ha generado un error en el servidor ", error);
+      console.error("💥 Error en el servidor al autenticar:", error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error del servidor',
+        text: 'Ocurrió un error al intentar iniciar sesión'
+      });
     });
   };
 
@@ -94,4 +126,4 @@ const MainLogin = () => {
   );
 };
 
-export default MainLogin;
+export default Main_Login;

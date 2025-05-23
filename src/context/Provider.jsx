@@ -9,7 +9,7 @@ const inicio = () => {
 
   return {
     logueado: !!sesion,
-    usuario: sesion ? JSON.parse(sesion) : null // Asegúrate de que el usuario sea null si no hay datos
+    usuario: sesion ? JSON.parse(sesion) : null
   };
 };
 
@@ -22,21 +22,33 @@ const Provider = ({ children }) => {
       usuario: datos
     };
     console.log('🚀 [Provider] login datos: ', datos);
-    localStorage.setItem("usuario", JSON.stringify(datos)); // Guarda el usuario en localStorage
+    localStorage.setItem("usuario", JSON.stringify(datos));
     dispatch(action);
   };
 
-  const cerrar_sesion = () => {
+  const cerrar_sesion = async () => {
+    const sesion = localStorage.getItem("usuario");
+    const usuario = sesion ? JSON.parse(sesion).usuario : null;
+
+    if (usuario) {
+      try {
+        await fetch(`http://localhost:3001/logout/${usuario}`, {
+          method: 'PUT'
+        });
+      } catch (error) {
+        console.error("Error al cerrar sesión en el servidor:", error);
+      }
+    }
+
     const action = {
       type: types.logout,
       usuario: null
     };
-    localStorage.removeItem("usuario"); // Elimina el usuario del localStorage
+    localStorage.removeItem("usuario");
     dispatch(action);
   };
 
   useEffect(() => {
-    // Este useEffect solo debe ejecutarse una vez para sincronizar el estado inicial
     const sesion = localStorage.getItem("usuario");
     if (sesion) {
       dispatch({
